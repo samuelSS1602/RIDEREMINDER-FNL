@@ -228,14 +228,14 @@ async function deleteVehicle(vehicleId) {
 
 // Add New Vehicle
 function goToAddVehicle() {
-    window.location.href = "DTEPAGE2.HTML";
+    window.location.href = "./DTEPAGE2.HTML";
 }
 
 // Logout Function
 function logout() {
     auth.signOut()
         .then(() => {
-            window.location.href = "index.html";
+            window.location.href = "./index.html";
         })
         .catch((error) => {
             console.error("Error signing out:", error);
