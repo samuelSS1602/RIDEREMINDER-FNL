@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Vehicle Details</title>
+    <link rel="stylesheet" href="DTEPAGE2.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/Screenshot 2025-01-29 172915.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <button onclick="location.href='VEHPAGE.html'" class="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Dashboard
+                </button>
+                <h1>Add Vehicle Details</h1>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="form-container">
+                <div class="form-header">
+                    <i class="fas fa-car-side form-icon"></i>
+                    <h2>New Vehicle Registration</h2>
+                    <p>Enter the vehicle details below</p>
+                </div>
+
+                <form id="vehicleForm">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="vehicleNumber">
+                                <i class="fas fa-hashtag"></i>
+                                VEHICLE NUMBER
+                            </label>
+                            <input id="vehicleNumber" type="text" placeholder="Enter vehicle number (e.g., TN01AB1234)" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="mobileNumber">
+                                <i class="fas fa-phone"></i>
+                                MOBILE NUMBER
+                            </label>
+                            <input id="mobileNumber" type="tel" placeholder="Enter mobile number" pattern="[0-9]{10}" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="customerName">
+                                <i class="fas fa-user"></i>
+                                CUSTOMER NAME
+                            </label>
+                            <input id="customerName" type="text" placeholder="Enter customer name" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="permitDate">
+                                <i class="fas fa-id-card"></i>
+                                PERMIT DATE
+                            </label>
+                            <input id="permitDate" type="date" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="fcDate">
+                                <i class="fas fa-calendar"></i>
+                                FC DATE
+                            </label>
+                            <input id="fcDate" type="date" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="icDate">
+                                <i class="fas fa-calendar-check"></i>
+                                IC DATE
+                            </label>
+                            <input id="icDate" type="date" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="taxDate">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                                TAX DATE
+                            </label>
+                            <input id="taxDate" type="date" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="greenTaxDate">
+                                <i class="fas fa-leaf"></i>
+                                GREEN TAX DATE
+                            </label>
+                            <input id="greenTaxDate" type="date" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="status">
+                                <i class="fas fa-info-circle"></i>
+                                STATUS
+                            </label>
+                            <select id="status" required>
+                                <option value="">Select Status</option>
+                                <option value="Active">Active</option>
+                                <option value="Expiring Soon">Expiring Soon</option>
+                                <option value="Expired">Expired</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" onclick="resetForm()" class="reset-btn">
+                            <i class="fas fa-undo"></i>
+                            Reset
+                        </button>
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-save"></i>
+                            Save Vehicle
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+        <div id="notificationPopup" class="notification-popup">
+            <div class="notification-content">
+                <h3></h3>
+                <p></p>
+                <button onclick="closeNotificationPopup()" class="close-popup-btn">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="FIREBASE.JS"></script>
+    <script src="DTEPAGE2.js"></script>
+</body>
+</html>

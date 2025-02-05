@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Management Dashboard</title>
+    <link rel="stylesheet" href="VEHPAGE.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <!-- External Firebase Configuration Script -->
+    <script src="FIREBASE.JS"></script>
+</head>
+<body>
+    <div class="dashboard">
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-car"></i> Vehicle Management</h1>
+                <div class="header-controls">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Search vehicles..." onkeyup="searchTable()">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <button onclick="goToAddVehicle()" class="add-btn">
+                        <i class="fas fa-plus"></i> Add Vehicle
+                    </button>
+                    <button onclick="exportToExcel()" class="export-btn">
+                        <i class="fas fa-file-excel"></i> Export
+                    </button>
+                    <button onclick="logout()" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                    <div class="user-info">
+                        <i class="fas fa-user"></i>
+                        <span id="userEmail"></span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <h3>Total Vehicles</h3>
+                    <div class="value" id="totalVehicles">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Active Vehicles</h3>
+                    <div class="value" id="activeVehicles">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Expiring Soon</h3>
+                    <div class="value" id="expiringSoon">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Expired</h3>
+                    <div class="value" id="expired">0</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h2>Vehicle Records</h2>
+                    <select id="statusFilter" onchange="filterByStatus()" class="status-select">
+                        <option value="all">All Status</option>
+                        <option value="Active">Active</option>
+                        <option value="Expiring Soon">Expiring Soon</option>
+                        <option value="Expired">Expired</option>
+                    </select>
+                </div>
+                
+                <div class="table-wrapper">
+                    <table class="vehicle-table">
+                        <thead>
+                            <tr>
+                                <th>S.NO</th>
+                                <th>VEHICLE NUMBER</th>
+                                <th>MOBILE NUMBER</th>
+                                <th>CUSTOMER NAME</th>
+                                <th>PERMIT DATE</th>
+                                <th>FC DATE</th>
+                                <th>IC DATE</th>
+                                <th>TAX DATE</th>
+                                <th>GREEN TAX DATE</th>
+                                <th>STATUS</th>
+                                <th>ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- Table content will be dynamically populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="VEHPAGE.js"></script>
+</body>
+</html>

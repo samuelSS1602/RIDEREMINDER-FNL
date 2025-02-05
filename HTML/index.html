@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Login</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/Screenshot 2025-01-29 172915.png">
+    <link rel="stylesheet" href="./LOGINPAGE.CSS">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-auth.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="login-box">
+            <h1 class="title">Book Login</h1>
+            <p class="subtitle">Sign in to access your account</p>
+
+            <form id="bookForm" class="form">
+                <div class="input-group">
+                    <label for="bookEmail">Email Address</label>
+                    <input 
+                        type="email" 
+                        id="bookEmail" 
+                        placeholder="Enter your email address" 
+                        required
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label for="bookPassword">Password</label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="bookPassword" 
+                            placeholder="Enter your password" 
+                            required
+                        >
+                        <button 
+                            type="button" 
+                            onclick="togglePasswordVisibility('bookPassword')" 
+                            class="password-toggle"
+                            aria-label="Toggle password visibility"
+                        >
+                            <i class="far fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">Login</button>
+            </form>
+            
+            <div class="footer">
+                <a href="#" onclick="forgotPassword()" class="link">Forgot Password?</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="FIREBASE.JS"></script>
+    <script src="LOGINPAGE.JS"></script>
+</body>
+</html>
