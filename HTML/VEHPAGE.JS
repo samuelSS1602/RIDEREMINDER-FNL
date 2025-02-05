@@ -228,7 +228,7 @@ async function deleteVehicle(vehicleId) {
 
 // Add New Vehicle
 function goToAddVehicle() {
-    window.location.href = "./DTEPAGE2.HTML";
+    window.location.href = "./DTEPAGE2.html"
 }
 
 // Logout Function
