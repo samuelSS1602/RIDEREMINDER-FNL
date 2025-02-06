@@ -6,7 +6,7 @@ document.getElementById('bookForm').addEventListener('submit', (e) => {
 
     firebase.auth().signInWithEmailAndPassword(bookEmail, bookPassword)
         .then(() => {
-            window.location.href = 'VEHPAGE.html';
+            window.location.href = './VEHPAGE.html';
         })
         .catch((error) => {
             alert("Login failed: " + error.message);
