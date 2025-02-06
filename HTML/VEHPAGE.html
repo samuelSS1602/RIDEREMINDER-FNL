@@ -4,70 +4,126 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vehicle Management Dashboard</title>
-    <link rel="stylesheet" href="VEHPAGE.css">
+    <link rel="stylesheet" href="./VEHPAGE.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-
-    <script src="./FIREBASE.JS"></script>
 </head>
 <body>
     <div class="dashboard">
-        <header class="header">
-            <div class="header-content">
-                <h1><i class="fas fa-car"></i> Vehicle Management</h1>
-                <div class="header-controls">
-                    <div class="search-box">
-                        <input type="text" id="searchInput" placeholder="Search vehicles..." onkeyup="searchTable()">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <button onclick="goToAddVehicle()" class="add-btn">
-                        <i class="fas fa-plus"></i> Add Vehicle
-                    </button>
-                    <button onclick="exportToExcel()" class="export-btn">
-                        <i class="fas fa-file-excel"></i> Export
-                    </button>
-                    <button onclick="logout()" class="logout-btn">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </button>
-                    <div class="user-info">
-                        <i class="fas fa-user"></i>
-                        <span id="userEmail"></span>
-                    </div>
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-car-side"></i>
+                <h2>Vehicle Hub</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="active"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="./DTEPAGE2.html"><i class="fas fa-plus"></i> Add Vehicle</a>
+                <a href="#" onclick="exportToExcel()"><i class="fas fa-file-export"></i> Export Data</a>
+                <a href="#" onclick="logout()" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </nav>
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-info">
+                    <span id="userEmail">admin@example.com</span>
+                    <small>Administrator</small>
                 </div>
             </div>
-        </header>
+        </aside>
 
         <main class="main-content">
+            <header class="top-header">
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search vehicles..." onkeyup="searchTable()">
+                </div>
+                <div class="header-actions">
+                    <div class="notification-bell">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="expiringCount">0</span>
+                    </div>
+                    <button onclick="goToAddVehicle()" class="add-vehicle-btn">
+                        <i class="fas fa-plus"></i> Add New Vehicle
+                    </button>
+                </div>
+            </header>
+
             <div class="dashboard-stats">
-                <div class="stat-card">
-                    <h3>Total Vehicles</h3>
-                    <div class="value" id="totalVehicles">0</div>
+                <div class="stat-card total">
+                    <div class="stat-icon">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3>Total Vehicles</h3>
+                        <div class="value" id="totalVehicles">0</div>
+                        <div class="trend">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+3.2% this month</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <h3>Active Vehicles</h3>
-                    <div class="value" id="activeVehicles">0</div>
+                <div class="stat-card active">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3>Active Vehicles</h3>
+                        <div class="value" id="activeVehicles">0</div>
+                        <div class="trend">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+2.4% this month</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <h3>Expiring Soon</h3>
-                    <div class="value" id="expiringSoon">0</div>
+                <div class="stat-card expiring">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3>Expiring Soon</h3>
+                        <div class="value" id="expiringSoon">0</div>
+                        <div class="trend warning">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+5.1% this month</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <h3>Expired</h3>
-                    <div class="value" id="expired">0</div>
+                <div class="stat-card expired">
+                    <div class="stat-icon">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3>Expired</h3>
+                        <div class="value" id="expired">0</div>
+                        <div class="trend danger">
+                            <i class="fas fa-arrow-down"></i>
+                            <span>-1.8% this month</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="table-container">
                 <div class="table-header">
-                    <h2>Vehicle Records</h2>
-                    <select id="statusFilter" onchange="filterByStatus()" class="status-select">
-                        <option value="all">All Status</option>
-                        <option value="Active">Active</option>
-                        <option value="Expiring Soon">Expiring Soon</option>
-                        <option value="Expired">Expired</option>
-                    </select>
+                    <div class="table-title">
+                        <h2>Vehicle Records</h2>
+                        <span class="record-count" id="recordCount">0 records</span>
+                    </div>
+                    <div class="table-actions">
+                        <select id="statusFilter" onchange="filterByStatus()" class="status-select">
+                            <option value="all">All Status</option>
+                            <option value="Active">Active</option>
+                            <option value="Expiring Soon">Expiring Soon</option>
+                            <option value="Expired">Expired</option>
+                        </select>
+                        <button onclick="refreshTable()" class="refresh-btn">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="table-wrapper">
@@ -96,6 +152,7 @@
         </main>
     </div>
 
+    <script src="./FIREBASE.JS"></script>
     <script src="./VEHPAGE.JS"></script>
 </body>
 </html>
