@@ -14,15 +14,15 @@
     <div class="container">
         <div class="login-box">
             <h1 class="title">Book Login</h1>
-            <p class="subtitle">Sign in to access your account</p>
+            <p class="subtitle">Welcome back! Please enter your details</p>
 
             <form id="bookForm" class="form">
                 <div class="input-group">
                     <label for="bookEmail">Email Address</label>
-                    <input 
-                        type="email" 
-                        id="bookEmail" 
-                        placeholder="Enter your email address" 
+                    <input
+                        type="email"
+                        id="bookEmail"
+                        placeholder="Enter your email address"
                         required
                     >
                 </div>
@@ -30,15 +30,15 @@
                 <div class="input-group">
                     <label for="bookPassword">Password</label>
                     <div class="relative">
-                        <input 
-                            type="password" 
-                            id="bookPassword" 
-                            placeholder="Enter your password" 
+                        <input
+                            type="password"
+                            id="bookPassword"
+                            placeholder="Enter your password"
                             required
                         >
-                        <button 
-                            type="button" 
-                            onclick="togglePasswordVisibility('bookPassword')" 
+                        <button
+                            type="button"
+                            onclick="togglePasswordVisibility('bookPassword')"
                             class="password-toggle"
                             aria-label="Toggle password visibility"
                         >
@@ -47,16 +47,18 @@
                     </div>
                 </div>
 
-                <button type="submit" class="submit-btn">Login</button>
+                <button type="submit" class="submit-btn">
+                    <span>Sign In</span>
+                </button>
             </form>
-            
+
             <div class="footer">
                 <a href="#" onclick="forgotPassword()" class="link">Forgot Password?</a>
             </div>
         </div>
     </div>
 
-    <script src="FIREBASE.JS"></script>
-    <script src="LOGINPAGE.JS"></script>
+    <script src="./FIREBASE.JS"></script>
+    <script src="./LOGINPAGE.JS"></script>
 </body>
 </html>
