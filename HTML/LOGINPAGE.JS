@@ -1,3 +1,4 @@
+// Form submission handler
 document.getElementById('bookForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const bookEmail = document.getElementById('bookEmail').value;
@@ -12,7 +13,7 @@ document.getElementById('bookForm').addEventListener('submit', (e) => {
         });
 });
 
-
+// Toggle password visibility
 function togglePasswordVisibility(inputId) {
     const input = document.getElementById(inputId);
     const toggleButton = input.nextElementSibling;
@@ -25,7 +26,7 @@ function togglePasswordVisibility(inputId) {
     }
 }
 
-
+// Handle forgot password
 function forgotPassword() {
     const email = prompt("Enter your email address:");
     if (email) {
