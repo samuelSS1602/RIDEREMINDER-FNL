@@ -22,6 +22,40 @@ async function fetchAndDisplayVehicles() {
 
         displayVehicles(vehicles);
         updateDashboardStats(vehicles);
+        document.getElementById('recordCount').textContent = `${vehicles.length} records`;
+        
+    } catch (error) {
+        console.error("Error fetching vehicles:", error);
+        tableBody.innerHTML = "<tr><td colspan='11' class='text-center text-red-600'>Error loading vehicles</td></tr>";
+    }
+}
+
+// Fetch and Display Vehicles
+async function fetchAndDisplayVehicles() {
+    const tableBody = document.getElementById("table-body");
+    tableBody.innerHTML = "<tr><td colspan='11' class='text-center'>Loading...</td></tr>";
+
+    try {
+        const snapshot = await db.collection("vehicles").get();
+        const vehicles = [];
+        snapshot.forEach(doc => {
+            vehicles.push({ id: doc.id, ...doc.data() });
+        });
+
+        // Sort vehicles based on status
+        vehicles.sort((a, b) => {
+            const statusA = calculateStatus(a);
+            const statusB = calculateStatus(b);
+            
+            if (statusA === 'Expired' && statusB !== 'Expired') return -1; // Expired comes first
+            if (statusA === 'Expiring Soon' && statusB !== 'Expired' && statusB !== 'Expiring Soon') return -1; // Expiring Soon comes next
+            return 1; // Otherwise, keep the order unchanged
+        });
+
+        displayVehicles(vehicles);
+        updateDashboardStats(vehicles);
+        document.getElementById('recordCount').textContent = `${vehicles.length} records`;
+
     } catch (error) {
         console.error("Error fetching vehicles:", error);
         tableBody.innerHTML = "<tr><td colspan='11' class='text-center text-red-600'>Error loading vehicles</td></tr>";
