@@ -9,8 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 </head>
 <body>
     <div class="container">
@@ -34,6 +34,19 @@
 
                 <form id="vehicleForm">
                     <div class="form-grid">
+                        <div class="input-group board-type-group">
+                            <label for="boardType">
+                                <i class="fas fa-clipboard-list"></i>
+                                BOARD TYPE
+                            </label>
+                            <select id="boardType" required>
+                                <option value="">Select Board Type</option>
+                                <option value="t-board">T-Board</option>
+                                <option value="own-board">Own Board</option>
+                            </select>
+                        </div>
+
+                        <!-- Common Fields -->
                         <div class="input-group">
                             <label for="vehicleNumber">
                                 <i class="fas fa-hashtag"></i>
@@ -59,14 +72,6 @@
                         </div>
 
                         <div class="input-group">
-                            <label for="permitDate">
-                                <i class="fas fa-id-card"></i>
-                                PERMIT DATE (Optional)
-                            </label>
-                            <input id="permitDate" type="date">
-                        </div>
-
-                        <div class="input-group">
                             <label for="fcDate">
                                 <i class="fas fa-calendar"></i>
                                 FC DATE (Optional)
@@ -82,7 +87,16 @@
                             <input id="icDate" type="date">
                         </div>
 
-                        <div class="input-group">
+                        <!-- T-Board Specific Fields -->
+                        <div class="input-group t-board-field">
+                            <label for="permitDate">
+                                <i class="fas fa-id-card"></i>
+                                PERMIT DATE (Optional)
+                            </label>
+                            <input id="permitDate" type="date">
+                        </div>
+
+                        <div class="input-group t-board-field">
                             <label for="taxDate">
                                 <i class="fas fa-file-invoice-dollar"></i>
                                 TAX DATE (Optional)
@@ -90,7 +104,7 @@
                             <input id="taxDate" type="date">
                         </div>
 
-                        <div class="input-group">
+                        <div class="input-group t-board-field">
                             <label for="greenTaxDate">
                                 <i class="fas fa-leaf"></i>
                                 GREEN TAX DATE (Optional)
@@ -135,7 +149,24 @@
         </div>
     </div>
     
-    <script src="./FIREBASE.JS"></script>
     <script src="./DTEPAGE2.js"></script>
+    <script>
+        // Example of how to add userId when creating a new vehicle
+        async function addVehicle(vehicleData) {
+            try {
+                const user = auth.currentUser;
+                if (!user) throw new Error('No user logged in');
+
+                await db.collection("vehicles").add({
+                    ...vehicleData,
+                    userId: user.uid,  // Add this line to store the user ID
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (error) {
+                console.error("Error adding vehicle:", error);
+                throw error;
+            }
+        }
+    </script>
 </body>
 </html>

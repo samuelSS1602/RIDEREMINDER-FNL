@@ -49,8 +49,18 @@
                     <button onclick="goToAddVehicle()" class="add-vehicle-btn">
                         <i class="fas fa-plus"></i> Add New Vehicle
                     </button>
+                    <button onclick="testAddVehicle()" class="debug-btn" style="display: none;">
+                        Add Test Vehicle
+                    </button>
                 </div>
             </header>
+
+            <div id="networkStatus" class="text-sm p-2"></div>
+
+            <div class="network-status">
+                <div id="networkStatus"></div>
+                <div id="lastSync"></div>
+            </div>
 
             <div class="dashboard-stats">
                 <div class="stat-card total">
@@ -120,6 +130,9 @@
                             <option value="Expiring Soon">Expiring Soon</option>
                             <option value="Expired">Expired</option>
                         </select>
+                        <select id="boardTypeFilter" class="status-select">
+                            <option value="all">All Board Types</option>
+                        </select>
                         <button onclick="refreshTable()" class="refresh-btn">
                             <i class="fas fa-sync-alt"></i>
                         </button>
@@ -132,6 +145,7 @@
                             <tr>
                                 <th>S.NO</th>
                                 <th>VEHICLE NUMBER</th>
+                                <th>BOARD TYPE</th>
                                 <th>MOBILE NUMBER</th>
                                 <th>CUSTOMER NAME</th>
                                 <th>PERMIT DATE</th>
@@ -152,7 +166,7 @@
         </main>
     </div>
 
-    <script src="./FIREBASE.JS"></script>
+
     <script src="./VEHPAGE.JS"></script>
 </body>
 </html>

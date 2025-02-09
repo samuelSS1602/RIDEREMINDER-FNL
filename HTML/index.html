@@ -7,15 +7,17 @@
     <link rel="icon" type="image/png" sizes="32x32" href="../assets/Screenshot 2025-01-29 172915.png">
     <link rel="stylesheet" href="./LOGINPAGE.CSS">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
     <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-firestore.js"></script>
 </head>
 <body>
     <div class="container">
         <div class="login-box">
             <h1 class="title">Book Login</h1>
             <p class="subtitle">Welcome back! Please enter your details</p>
-
+            
             <form id="bookForm" class="form">
                 <div class="input-group">
                     <label for="bookEmail">Email Address</label>
@@ -26,7 +28,7 @@
                         required
                     >
                 </div>
-
+                
                 <div class="input-group">
                     <label for="bookPassword">Password</label>
                     <div class="relative">
@@ -46,19 +48,18 @@
                         </button>
                     </div>
                 </div>
-
+                
                 <button type="submit" class="submit-btn">
                     <span>Sign In</span>
                 </button>
             </form>
-
+            
             <div class="footer">
                 <a href="#" onclick="forgotPassword()" class="link">Forgot Password?</a>
             </div>
         </div>
     </div>
-
-    <script src="./FIREBASE.JS"></script>
+    
     <script src="./LOGINPAGE.JS"></script>
 </body>
 </html>
