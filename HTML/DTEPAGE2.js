@@ -58,9 +58,15 @@ boardTypeSelect.addEventListener('change', toggleFormFields);
 // Notification Popup function
 function showNotificationPopup(message, type) {
     const popup = document.getElementById("notificationPopup");
-    popup.querySelector("h3").textContent = type === "success" ? "Success" : "Error";
-    popup.querySelector("h3").style.color = type === "success" ? "green" : "red";
-    popup.querySelector("p").textContent = message;
+    if (!popup) return;
+    
+    const title = popup.querySelector("h3");
+    const text = popup.querySelector("p");
+    
+    title.textContent = type === "success" ? "Success" : "Error";
+    title.style.color = type === "success" ? "#16a34a" : "#dc2626";
+    text.textContent = message;
+    
     popup.style.display = "block";
 }
 
@@ -71,6 +77,16 @@ function closeNotificationPopup() {
 function resetForm() {
     vehicleForm.reset();
     toggleFormFields();
+}
+
+function validateDates() {
+    const today = new Date();
+    const dateInputs = [permitDateInput, fcDateInput, icDateInput, taxDateInput, greenTaxDateInput];
+    
+    return dateInputs.every(input => {
+        if (!input || !input.value) return true;
+        return new Date(input.value) >= today;
+    });
 }
 
 // Form submission handler
@@ -84,48 +100,58 @@ vehicleForm.addEventListener("submit", async function(event) {
             return;
         }
 
-        // Create vehicle data with userId
+        // Create vehicle data object
         const vehicleData = {
-            userId: user.uid,  // Add this line to include user ID
+            userId: user.uid,  // Important: Add user ID
             boardType: boardTypeSelect.value,
             vehicleNumber: vehicleNumberInput.value.trim().toUpperCase(),
             mobileNumber: mobileNumberInput.value.trim(),
-            customerName: customerNameInput.value.trim().toUpperCase(),
+            customerName: customerNameInput.value.trim(),
             status: statusInput.value,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
 
-        // Add optional fields based on board type
+        // Add optional dates based on board type
         if (boardTypeSelect.value === 't-board') {
-            vehicleData.permitDate = permitDateInput.value || null;
-            vehicleData.fcDate = fcDateInput.value || null;
-            vehicleData.icDate = icDateInput.value || null;
-            vehicleData.taxDate = taxDateInput.value || null;
-            vehicleData.greenTaxDate = greenTaxDateInput.value || null;
+            if (permitDateInput.value) vehicleData.permitDate = permitDateInput.value;
+            if (fcDateInput.value) vehicleData.fcDate = fcDateInput.value;
+            if (icDateInput.value) vehicleData.icDate = icDateInput.value;
+            if (taxDateInput.value) vehicleData.taxDate = taxDateInput.value;
+            if (greenTaxDateInput.value) vehicleData.greenTaxDate = greenTaxDateInput.value;
         } else {
-            vehicleData.fcDate = fcDateInput.value || null;
-            vehicleData.icDate = icDateInput.value || null;
+            if (fcDateInput.value) vehicleData.fcDate = fcDateInput.value;
+            if (icDateInput.value) vehicleData.icDate = icDateInput.value;
         }
 
-        // Check if vehicle number already exists for this user
-        const existingVehicle = await db.collection("vehicles")
+        // Check for duplicate vehicle number
+        const existingVehicles = await db.collection("vehicles")
             .where("vehicleNumber", "==", vehicleData.vehicleNumber)
             .where("userId", "==", user.uid)
             .get();
 
-        if (!existingVehicle.empty) {
+        if (!existingVehicles.empty) {
             showNotificationPopup("Vehicle number already exists in your records", "error");
             return;
         }
 
-        // Add vehicle to database
+        // Add vehicle to Firestore
         await db.collection("vehicles").add(vehicleData);
+        
         showNotificationPopup("Vehicle details added successfully!", "success");
         resetForm();
         
+        // Optional: Redirect to vehicle list page after short delay
+        setTimeout(() => {
+            window.location.href = './VEHPAGE.html';
+        }, 2000);
+
     } catch (error) {
         console.error("Error adding vehicle:", error);
-        showNotificationPopup(`Error: ${error.message}`, "error");
+        showNotificationPopup(
+            `Error: ${error.message || 'Failed to add vehicle'}`, 
+            "error"
+        );
     }
 });
 
@@ -146,3 +172,12 @@ vehicleForm.addEventListener("submit", async function(event) {
 
 // Initialize form fields visibility
 toggleFormFields();
+
+// Add error handling for auth state
+auth.onAuthStateChanged(user => {
+    if (!user) {
+        window.location.href = "index.html";
+        return;
+    }
+    console.log("User authenticated:", user.uid);
+});

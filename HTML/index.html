@@ -3,39 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Login</title>
+    <title>RideReminder Login</title>
     <link rel="icon" type="image/png" sizes="32x32" href="../assets/Screenshot 2025-01-29 172915.png">
-    <link rel="stylesheet" href="./LOGINPAGE.CSS">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-
+    <link rel="stylesheet" href="./LOGINPAGE.CSS">
     <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.9.1/firebase-firestore.js"></script>
 </head>
 <body>
     <div class="container">
-        <div class="login-box">
-            <h1 class="title">Book Login</h1>
-            <p class="subtitle">Welcome back! Please enter your details</p>
+        <div class="login-box" id="loginBox">
+            <div class="logo-container">
+                <img src="../assets/Screenshot 2025-01-29 172915.png" alt="RideReminder Logo" class="logo">
+            </div>
+            <h1 class="title">Welcome Back</h1>
+            <p class="subtitle">Sign in to continue to RideReminder</p>
             
             <form id="bookForm" class="form">
                 <div class="input-group">
                     <label for="bookEmail">Email Address</label>
-                    <input
-                        type="email"
-                        id="bookEmail"
-                        placeholder="Enter your email address"
-                        required
-                    >
+                    <div class="input-wrapper">
+                        <i class="fas fa-envelope input-icon"></i>
+                        <input
+                            type="email"
+                            id="bookEmail"
+                            placeholder="Enter your email address"
+                            autocomplete="email"
+                            required
+                        >
+                    </div>
+                    <span class="error-message" id="emailError"></span>
                 </div>
                 
                 <div class="input-group">
                     <label for="bookPassword">Password</label>
-                    <div class="relative">
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock input-icon"></i>
                         <input
                             type="password"
                             id="bookPassword"
                             placeholder="Enter your password"
+                            autocomplete="current-password"
                             required
                         >
                         <button
@@ -47,19 +56,31 @@
                             <i class="far fa-eye"></i>
                         </button>
                     </div>
+                    <span class="error-message" id="passwordError"></span>
+                </div>
+
+                <div class="options-group">
+                    <label class="remember-me">
+                        <input type="checkbox" id="rememberMe">
+                        <span class="checkmark"></span>
+                        Remember me
+                    </label>
+                    <a href="#" onclick="forgotPassword()" class="forgot-link">Forgot Password?</a>
                 </div>
                 
                 <button type="submit" class="submit-btn">
-                    <span>Sign In</span>
+                    <span class="btn-text">Sign In</span>
+                    <div class="spinner"></div>
                 </button>
             </form>
             
             <div class="footer">
-                <a href="#" onclick="forgotPassword()" class="link">Forgot Password?</a>
+                <p>Don't have an account? <a href="#" class="signup-link">Sign up</a></p>
             </div>
         </div>
     </div>
     
+    <div class="toast" id="toast"></div>
     <script src="./LOGINPAGE.JS"></script>
 </body>
 </html>

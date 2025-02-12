@@ -9,6 +9,7 @@ const firebaseConfig = {
     measurementId: "G-GLRPTCH4NE"
 };
 
+
 // Initialize Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
@@ -22,9 +23,9 @@ const db = firebase.firestore();
 db.enablePersistence()
     .catch((err) => {
         if (err.code == 'failed-precondition') {
-            console.log('Multiple tabs open, persistence can only be enabled in one tab at a time');
+            showToast('Multiple tabs open, persistence can only be enabled in one tab at a time', 'error');
         } else if (err.code == 'unimplemented') {
-            console.log('The current browser doesn\'t support persistence');
+            showToast('The current browser doesn\'t support persistence', 'error');
         }
     });
 
@@ -32,55 +33,152 @@ db.enablePersistence()
 const bookForm = document.getElementById('bookForm');
 const bookEmail = document.getElementById('bookEmail');
 const bookPassword = document.getElementById('bookPassword');
+const rememberMe = document.getElementById('rememberMe');
+const emailError = document.getElementById('emailError');
+const passwordError = document.getElementById('passwordError');
+const loginBox = document.getElementById('loginBox');
+
+// Toast functionality
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.style.display = 'block';
+    toast.style.background = type === 'error' ? '#fee2e2' : '#f0fdf4';
+    toast.style.color = type === 'error' ? '#dc2626' : '#16a34a';
+    toast.style.borderLeft = `4px solid ${type === 'error' ? '#dc2626' : '#16a34a'}`;
+
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 5000);
+}
 
 // Loading State Management
 function setLoading(isLoading) {
     const submitBtn = document.querySelector('.submit-btn');
+    const btnText = submitBtn.querySelector('.btn-text');
+    const spinner = submitBtn.querySelector('.spinner');
+    
     if (isLoading) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span>Signing In...</span>';
+        btnText.style.opacity = '0';
+        spinner.style.display = 'block';
     } else {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<span>Sign In</span>';
+        btnText.style.opacity = '1';
+        spinner.style.display = 'none';
+    }
+}
+
+// Input Validation
+function validateEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+function validatePassword(password) {
+    return password.length >= 6;
+}
+
+// Remember Me functionality
+function setupRememberMe() {
+    const remembered = localStorage.getItem('rememberedEmail');
+    if (remembered) {
+        bookEmail.value = remembered;
+        rememberMe.checked = true;
     }
 }
 
 // Form submission handler
 bookForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    setLoading(true);
+    
+    // Reset error messages
+    emailError.style.display = 'none';
+    passwordError.style.display = 'none';
+    
+    const email = bookEmail.value.trim();
+    const password = bookPassword.value;
+    let hasError = false;
+    
+    // Validate email
+    if (!validateEmail(email)) {
+        emailError.textContent = 'Please enter a valid email address';
+        emailError.style.display = 'block';
+        hasError = true;
+    }
+    
+    // Validate password
+    if (!validatePassword(password)) {
+        passwordError.textContent = 'Password must be at least 6 characters long';
+        passwordError.style.display = 'block';
+        hasError = true;
+    }
+    
+    if (hasError) return;
     
     try {
-        const email = bookEmail.value.trim();
-        const password = bookPassword.value;
+        setLoading(true);
         
-        if (!email.includes('@')) {
-            throw new Error('Please enter a valid email address');
+        // Sign in user
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+        
+        // Handle Remember Me
+        if (rememberMe.checked) {
+            localStorage.setItem('rememberedEmail', email);
+        } else {
+            localStorage.removeItem('rememberedEmail');
         }
         
-        await firebase.auth().signInWithEmailAndPassword(email, password);
-        window.location.href = './VEHPAGE.html';
+        showToast('Login successful! Redirecting...', 'success');
+        
+        // Add animation before redirect
+        loginBox.style.transform = 'translateY(-20px) scale(0.95)';
+        loginBox.style.opacity = '0';
+        
+        setTimeout(() => {
+            window.location.href = './VEHPAGE.html';
+        }, 1000);
+        
     } catch (error) {
         console.error('Login error:', error);
-        let errorMessage = error.message;
-        
-        if (error.code === 'auth/user-not-found') {
-            errorMessage = 'No account found with this email. Please check and try again.';
-        } else if (error.code === 'auth/wrong-password') {
-            errorMessage = 'Incorrect password. Please try again.';
-        } else if (error.code === 'auth/too-many-requests') {
-            errorMessage = 'Too many failed attempts. Please try again later.';
-        }
-        
-        alert("Login failed: " + errorMessage);
         setLoading(false);
+        handleLoginError(error);
     }
 });
+
+// Add this helper function for error handling
+function handleLoginError(error) {
+    let errorMessage = 'An error occurred during login';
+    
+    switch (error.code) {
+        case 'auth/user-not-found':
+            errorMessage = 'No account found with this email';
+            emailError.textContent = errorMessage;
+            emailError.style.display = 'block';
+            break;
+        case 'auth/wrong-password':
+            errorMessage = 'Incorrect password';
+            passwordError.textContent = errorMessage;
+            passwordError.style.display = 'block';
+            break;
+        case 'auth/too-many-requests':
+            errorMessage = 'Too many failed attempts. Please try again later';
+            break;
+        case 'auth/network-request-failed':
+            errorMessage = 'Network error. Please check your connection';
+            break;
+        case 'permission-denied':
+            errorMessage = 'Access denied. Please contact administrator';
+            break;
+    }
+    
+    showToast(errorMessage, 'error');
+}
 
 // Toggle password visibility
 function togglePasswordVisibility(inputId) {
     const input = document.getElementById(inputId);
-    const toggleButton = input.nextElementSibling;
+    const toggleButton = input.parentElement.querySelector('.password-toggle');
     const eyeIcon = toggleButton.querySelector('i');
     
     if (input.type === 'password') {
@@ -95,106 +193,103 @@ function togglePasswordVisibility(inputId) {
 }
 
 // Handle forgot password
-function forgotPassword() {
-    const email = prompt("Enter your email address:");
+async function forgotPassword() {
+    const email = bookEmail.value.trim() || prompt("Enter your email address:");
     
     if (!email) return;
     
-    if (!email.includes('@')) {
-        alert('Please enter a valid email address');
+    if (!validateEmail(email)) {
+        showToast('Please enter a valid email address', 'error');
         return;
     }
     
-    firebase.auth().sendPasswordResetEmail(email)
-        .then(() => {
-            alert("Password reset email sent! Please check your inbox.");
-        })
-        .catch((error) => {
-            console.error('Password reset error:', error);
-            let errorMessage = error.message;
-            
-            if (error.code === 'auth/user-not-found') {
-                errorMessage = 'No account found with this email address.';
-            } else if (error.code === 'auth/invalid-email') {
-                errorMessage = 'Please enter a valid email address.';
-            }
-            
-            alert("Error: " + errorMessage);
-        });
+    try {
+        setLoading(true);
+        await firebase.auth().sendPasswordResetEmail(email);
+        showToast('Password reset email sent! Please check your inbox.', 'success');
+    } catch (error) {
+        console.error('Password reset error:', error);
+        let errorMessage = 'Error sending reset email';
+        
+        if (error.code === 'auth/user-not-found') {
+            errorMessage = 'No account found with this email address.';
+        }
+        
+        showToast(errorMessage, 'error');
+    } finally {
+        setLoading(false);
+    }
 }
 
-// Auth state observer
-auth.onAuthStateChanged(user => {
-    if (user) {
-        console.log('User is signed in:', user.uid);
-        
-        db.collection('users').doc(user.uid).set({
-            lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true }).catch(console.error);
-        
-        if (window.location.pathname.includes('login')) {
-            window.location.href = './VEHPAGE.html';
-        }
-    } else {
-        console.log('User is signed out');
-    }
-});
-
-// Input validation
+// Input validation on typing
 bookEmail.addEventListener('input', function() {
     this.value = this.value.trim();
-    if (this.value && !this.value.includes('@')) {
-        this.style.borderColor = 'red';
+    emailError.style.display = 'none';
+    if (this.value && !validateEmail(this.value)) {
+        this.style.borderColor = '#ef4444';
     } else {
         this.style.borderColor = '';
     }
 });
 
-// Clear form errors on focus
-[bookEmail, bookPassword].forEach(input => {
-    input.addEventListener('focus', function() {
+bookPassword.addEventListener('input', function() {
+    passwordError.style.display = 'none';
+    if (this.value && !validatePassword(this.value)) {
+        this.style.borderColor = '#ef4444';
+    } else {
         this.style.borderColor = '';
-    });
-});
-
-// Prevent multiple form submissions
-let isSubmitting = false;
-bookForm.addEventListener('submit', () => {
-    if (isSubmitting) return false;
-    isSubmitting = true;
-    setTimeout(() => isSubmitting = false, 2000);
-});
-
-// Handle page visibility changes instead of unload
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-        // Perform cleanup or save state here
-        const user = auth.currentUser;
-        if (user) {
-            db.collection('users').doc(user.uid).set({
-                lastActive: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true }).catch(console.error);
-        }
     }
 });
 
-// Modern way to handle beforeunload if absolutely necessary
-window.addEventListener('beforeunload', (event) => {
-    const user = auth.currentUser;
-    if (user) {
-        // Synchronous operations only
-        localStorage.setItem('lastSessionTime', new Date().toISOString());
-    }
-});
-
-// Network status monitoring
+// Network status monitoring with UI feedback
 window.addEventListener('online', () => {
     console.log('Application is online');
+    showToast('Connection restored', 'success');
     db.enableNetwork().catch(console.error);
 });
 
 window.addEventListener('offline', () => {
     console.log('Application is offline');
+    showToast('You are offline. Some features may be limited.', 'error');
     db.disableNetwork().catch(console.error);
-    alert('You are currently offline. Some features may be limited.');
+});
+
+// Initialize Remember Me on page load
+document.addEventListener('DOMContentLoaded', setupRememberMe);
+
+// Modify the auth state observer
+auth.onAuthStateChanged(async user => {
+    if (user) {
+        console.log('User is signed in:', user.uid);
+        
+        try {
+            // First check if user document exists
+            const userRef = db.collection('users').doc(user.uid);
+            const userDoc = await userRef.get();
+            
+            if (!userDoc.exists) {
+                // Create new user document
+                await userRef.set({
+                    email: user.email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } else {
+                // Only update lastActive timestamp
+                await userRef.update({
+                    lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+
+            // Redirect if on login page
+            if (window.location.pathname.includes('login')) {
+                window.location.href = './VEHPAGE.html';
+            }
+        } catch (error) {
+            console.error('Error updating user data:', error);
+            showToast('Error updating user data. Some features may be limited.', 'error');
+        }
+    } else {
+        console.log('User is signed out');
+    }
 });

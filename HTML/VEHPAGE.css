@@ -347,8 +347,8 @@ body {
 /* Action Buttons */
 .action-buttons {
     display: flex;
-    gap: 0.5rem;
-    align-items: center;
+    gap: 4px;
+    justify-content: center;
 }
 
 .action-btn {
@@ -382,22 +382,18 @@ body {
 }
 
 .whatsapp-btn {
-    background-color: #25D366;
+    background-color: #25d366;
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
+    border-radius: 4px;
+    padding: 6px 10px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease;
+    margin-left: 4px;
 }
 
 .whatsapp-btn:hover {
-    background-color: #20bd5a;
-    box-shadow: 0 4px 6px rgba(37, 211, 102, 0.2);
-    transform: translateY(-2px);
+    background-color: #128c7e;
 }
 
 .whatsapp-btn i {
@@ -478,4 +474,25 @@ body {
     .status-select {
         width: 100%;
     }
+}
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-badge.active {
+    background-color: #10B981;
+    color: white;
+}
+
+.status-badge.expiring-soon {
+    background-color: #F59E0B;
+    color: white;
+}
+
+.status-badge.expired {
+    background-color: #EF4444;
+    color: white;
 }
