@@ -37,28 +37,23 @@ async function initializeFirebase() {
     }
 }
 
-// Add this after initializeFirebase function
 function setupEventListeners() {
-    // Search functionality
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('input', searchTable);
     }
 
-    // Status filter
     const statusFilter = document.getElementById('statusFilter');
     if (statusFilter) {
         statusFilter.addEventListener('change', filterByStatus);
     }
 
-    // Board type filter
     const boardTypeFilter = document.getElementById('boardTypeFilter');
     if (boardTypeFilter) {
         boardTypeFilter.addEventListener('change', filterByBoardType);
     }
 }
 
-// Authentication State Observer
 function setupAuthStateObserver() {
     auth.onAuthStateChanged(user => {
         if (!user) {
@@ -74,58 +69,19 @@ function setupAuthStateObserver() {
     });
 }
 
-// Utility Functions
-const formatDate = (dateString) => {
+function formatDate(dateString) {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-IN', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit'
     });
-};
+}
 
-const formatPhoneNumber = (phone) => {
+function formatPhoneNumber(phone) {
     if (!phone) return '';
     const cleaned = phone.replace(/\D/g, '');
     return cleaned.startsWith('91') ? cleaned : `91${cleaned}`;
-};
-
-// Vehicle Status Calculation
-function calculateStatus(vehicle) {
-    const today = new Date();
-    const warningDays = 30;
-
-    // Different date checks based on board type
-    const dates = vehicle.boardType === 'o-board' ? 
-        [vehicle.fcDate, vehicle.icDate] :  // Only FC and Insurance for own board
-        [vehicle.permitDate, vehicle.fcDate, vehicle.icDate, vehicle.taxDate, vehicle.greenTaxDate];
-
-    const validDates = dates.filter(Boolean);
-
-    if (!validDates.length) return 'Active';
-
-    const earliestDate = new Date(Math.min(...validDates.map(date => new Date(date))));
-    if (earliestDate < today) return 'Expired';
-
-    const daysUntilExpiry = Math.ceil((earliestDate - today) / (1000 * 60 * 60 * 24));
-    return daysUntilExpiry <= warningDays ? 'Expiring Soon' : 'Active';
-}
-
-// WhatsApp Integration
-function generateWhatsAppMessage(vehicle) {
-    const expiringDocs = getExpiringDocuments(vehicle);
-    const message = 
-        `அன்பார்ந்த ${vehicle.customerName},\n\n` +
-        `இது உங்கள் வாகனம் ${vehicle.vehicleNumber} பற்றிய நினைவூட்டல்.\n\n` +
-        `கீழ்கண்ட ஆவணங்களின் காலக்கெடு நெருங்கி வருகிறது:\n\n` +
-        `${expiringDocs}\n\n` +
-        `தயவுசெய்து உரிய நேரத்தில் புதுப்பித்துக் கொள்ளவும்.\n\n` +
-        `நன்றி!,\n` +
-        `ஸ்ரீ பாலாஜி ஓட்டுநர் பள்ளி,\n` +
-        `பழனி.\n\n` +
-        `தொடர்புக்கு: 9842816621`;
-
-    return encodeURIComponent(message);
 }
 
 function getExpiringDocuments(vehicle, warningDays = 30) {
@@ -145,6 +101,7 @@ function getExpiringDocuments(vehicle, warningDays = 30) {
         }
     };
 
+    // Check all relevant documents
     checkDocument(vehicle.permitDate, 'Permit', 'பெர்மிட்');
     checkDocument(vehicle.fcDate, 'FC', 'FC');
     checkDocument(vehicle.icDate, 'Insurance', 'இன்சூரன்ஸ்');
@@ -154,7 +111,23 @@ function getExpiringDocuments(vehicle, warningDays = 30) {
     return documents.join('\n');
 }
 
-// Add this function to handle WhatsApp message sending
+function generateWhatsAppMessage(vehicle) {
+    const expiringDocs = getExpiringDocuments(vehicle);
+    
+    const message = 
+        `அன்பார்ந்த ${vehicle.customerName},\n\n` +
+        `இது உங்கள் வாகனம் ${vehicle.vehicleNumber} பற்றிய நினைவூட்டல்.\n\n` +
+        `கீழ்கண்ட ஆவணங்களின் காலக்கெடு நெருங்கி வருகிறது:\n\n` +
+        `${expiringDocs}\n\n` +
+        `தயவுசெய்து உரிய நேரத்தில் புதுப்பித்துக் கொள்ளவும்.\n\n` +
+        `நன்றி!,\n` +
+        `ஸ்ரீ பாலாஜி ஓட்டுநர் பள்ளி,\n` +
+        `பழனி.\n\n` +
+        `தொடர்புக்கு: 9842816621`;
+
+    return encodeURIComponent(message);
+}
+
 function sendWhatsAppMessage(vehicle) {
     try {
         if (!vehicle || !vehicle.mobileNumber) {
@@ -172,7 +145,6 @@ function sendWhatsAppMessage(vehicle) {
     }
 }
 
-// Data Operations
 async function fetchAndDisplayVehicles(userId) {
     if (!userId) {
         console.error("No userId provided");
@@ -224,7 +196,16 @@ async function fetchAndDisplayVehicles(userId) {
     }
 }
 
-// Update the existing displayVehicles function
+// Add this as a global function outside displayVehicles
+function getBoardType(type) {
+    switch(type) {
+        case 'o-board': return 'OWN BOARD';
+        case 't-board': return 'TRANSPORT BOARD';
+        default: return 'N/A';
+    }
+}
+
+// Update the displayVehicles function
 function displayVehicles(vehicles) {
     const tableBody = document.getElementById("table-body");
     if (!tableBody) return;
@@ -236,37 +217,53 @@ function displayVehicles(vehicles) {
         const row = document.createElement('tr');
         const isOwnBoard = vehicle.boardType === 'o-board';
         
-        // Safely stringify the vehicle object for the onclick handler
-        const safeVehicleString = JSON.stringify(vehicle)
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, "\\'");
-            
+        // Capitalize the customer name
+        const capitalizedName = vehicle.customerName ? 
+            vehicle.customerName.toUpperCase() : 'N/A';
+        
+        // Create a safe version of the vehicle object with capitalized values
+        const safeVehicle = {
+            customerName: capitalizedName,
+            vehicleNumber: vehicle.vehicleNumber?.toUpperCase() || '',
+            mobileNumber: vehicle.mobileNumber || '',
+            boardType: getBoardType(vehicle.boardType), // Using the global function
+            permitDate: vehicle.permitDate || '',
+            fcDate: vehicle.fcDate || '',
+            icDate: vehicle.icDate || '',
+            taxDate: vehicle.taxDate || '',
+            greenTaxDate: vehicle.greenTaxDate || ''
+        };
+
+        // Safely encode vehicle data for WhatsApp button
+        const safeVehicleString = encodeURIComponent(JSON.stringify(safeVehicle));
+        
         row.innerHTML = `
             <td>${index + 1}</td>
-            <td>${vehicle.vehicleNumber || 'N/A'}</td>
-            <td>${vehicle.boardType || 'N/A'}</td>
+            <td>${vehicle.vehicleNumber?.toUpperCase() || 'N/A'}</td>
+            <td>${getBoardType(vehicle.boardType)}</td>
             <td>${vehicle.mobileNumber || 'N/A'}</td>
-            <td>${vehicle.customerName || 'N/A'}</td>
-            <td>${isOwnBoard ? 'N/A' : formatDate(vehicle.permitDate)}</td>
-            <td>${formatDate(vehicle.fcDate)}</td>
-            <td>${formatDate(vehicle.icDate)}</td>
-            <td>${isOwnBoard ? 'N/A' : formatDate(vehicle.taxDate)}</td>
-            <td>${isOwnBoard ? 'N/A' : formatDate(vehicle.greenTaxDate)}</td>
+            <td>${capitalizedName}</td>
+            <td>${isOwnBoard ? '-' : formatDate(vehicle.permitDate)}</td>
+            <td>${formatDate(vehicle.fcDate) || '-'}</td>
+            <td>${formatDate(vehicle.icDate) || '-'}</td>
+            <td>${isOwnBoard ? '-' : formatDate(vehicle.taxDate)}</td>
+            <td>${isOwnBoard ? '-' : formatDate(vehicle.greenTaxDate)}</td>
             <td>
                 <span class="status-badge ${status.toLowerCase()}">${status}</span>
             </td>
             <td class="action-buttons">
-                <button onclick="editVehicle('${vehicle.id}')" class="edit-btn">
+                <button onclick="editVehicle('${vehicle.id}')" class="edit-btn" title="Edit">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="deleteVehicle('${vehicle.id}')" class="delete-btn">
+                <button onclick="deleteVehicle('${vehicle.id}')" class="delete-btn" title="Delete">
                     <i class="fas fa-trash"></i>
                 </button>
-                ${status === 'Expiring Soon' ? `
-                <button onclick='sendWhatsAppMessage(${safeVehicleString})'
-                        class="whatsapp-btn" title="Send WhatsApp Reminder">
-                    <i class="fab fa-whatsapp"></i>
-                </button>
+                ${vehicle.mobileNumber ? `
+                    <button onclick="sendWhatsAppMessage(JSON.parse(decodeURIComponent('${safeVehicleString}')))"
+                            class="whatsapp-btn" 
+                            title="Send WhatsApp Message">
+                        <i class="fab fa-whatsapp"></i>
+                    </button>
                 ` : ''}
             </td>
         `;
@@ -274,22 +271,18 @@ function displayVehicles(vehicles) {
     });
 }
 
-// Add dashboard stats update function
 function updateDashboardStats(vehicles) {
-    // Update total vehicles count
     const totalVehicles = document.getElementById('totalVehicles');
     if (totalVehicles) {
         totalVehicles.textContent = vehicles.length;
     }
 
-    // Count vehicles by status
     const stats = vehicles.reduce((acc, vehicle) => {
         const status = calculateStatus(vehicle);
         acc[status] = (acc[status] || 0) + 1;
         return acc;
     }, {});
 
-    // Update status counts
     const activeVehicles = document.getElementById('activeVehicles');
     if (activeVehicles) {
         activeVehicles.textContent = stats['Active'] || 0;
@@ -305,14 +298,12 @@ function updateDashboardStats(vehicles) {
         expired.textContent = stats['Expired'] || 0;
     }
 
-    // Update notification badge
     const expiringCount = document.getElementById('expiringCount');
     if (expiringCount) {
         expiringCount.textContent = stats['Expiring Soon'] || 0;
     }
 }
 
-// Add search functionality
 function searchTable() {
     const searchInput = document.getElementById('searchInput');
     const filter = searchInput.value.toUpperCase();
@@ -335,7 +326,6 @@ function searchTable() {
     }
 }
 
-// Add filter functions
 function filterByStatus() {
     const statusFilter = document.getElementById('statusFilter');
     const selectedStatus = statusFilter.value;
@@ -361,12 +351,13 @@ function filterByBoardType() {
     for (let row of rows) {
         const cells = row.getElementsByTagName('td');
         if (cells.length > 2) {
+            const boardType = cells[2].textContent;
+            row.style.display = 
                 selectedType === 'all' || boardType === selectedType ? '' : 'none';
         }
     }
 }
 
-// Add logout function
 function logout() {
     auth.signOut()
         .then(() => {
@@ -377,23 +368,10 @@ function logout() {
         });
 }
 
-// Add navigation function
 function goToAddVehicle() {
     window.location.href = './DTEPAGE2.html';
 }
 
-// Initialize Application
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        await initializeFirebase();
-        setupAuthStateObserver();
-        setupEventListeners();
-    } catch (error) {
-        console.error("Application initialization error:", error);
-    }
-});
-
-// Export functionality
 function exportToExcel() {
     try {
         const table = document.querySelector('.vehicle-table');
@@ -422,49 +400,121 @@ function exportToExcel() {
         console.error("Export error:", error);
         alert("Error exporting data. Please try again.");
     }
-}// Update the displayVehicles function with proper string escaping and JSON handling
-function displayVehicles(vehicles) {
-    const tableBody = document.getElementById("table-body");
-    if (!tableBody) return;
+}
 
-    tableBody.innerHTML = '';
+// Initialize Application
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await initializeFirebase();
+        setupAuthStateObserver();
+        setupEventListeners();
+    } catch (error) {
+        console.error("Application initialization error:", error);
+        alert("Error initializing application. Please refresh the page.");
+    }
+});
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
     
-    vehicles.forEach((vehicle, index) => {
-        const status = calculateStatus(vehicle);
-        const row = document.createElement('tr');
+    document.body.appendChild(toast);
+    
+    // Trigger reflow
+    toast.offsetHeight;
+    
+    // Add show class for animation
+    toast.classList.add('show');
+    
+    // Remove toast after 3 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
+
+// Error handling for edit and delete operations
+async function editVehicle(vehicleId) {
+    try {
+        if (!vehicleId) {
+            throw new Error('Vehicle ID is required');
+        }
+        // Store the vehicle ID in sessionStorage for the edit page
+        sessionStorage.setItem('editVehicleId', vehicleId);
+        window.location.href = './DTEPAGE2.html';
+    } catch (error) {
+        console.error('Edit vehicle error:', error);
+        showToast('Error opening edit page', 'error');
+    }
+}
+
+async function deleteVehicle(vehicleId) {
+    try {
+        if (!vehicleId) {
+            throw new Error('Vehicle ID is required');
+        }
+
+        if (!confirm('Are you sure you want to delete this vehicle?')) {
+            return;
+        }
+
+        await db.collection('vehicles').doc(vehicleId).delete();
+        showToast('Vehicle deleted successfully', 'success');
         
-        // Safely stringify the vehicle object for the onclick handler
-        const safeVehicleString = JSON.stringify(vehicle)
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, "\\'");
-            
-        row.innerHTML = `
-            <td>${index + 1}</td>
-            <td>${vehicle.vehicleNumber || 'N/A'}</td>
-            <td>${vehicle.boardType || 'N/A'}</td>
-            <td>${vehicle.mobileNumber || 'N/A'}</td>
-            <td>${vehicle.customerName || 'N/A'}</td>
-            <td>${formatDate(vehicle.permitDate)}</td>
-            <td>${formatDate(vehicle.fcDate)}</td>
-            <td>${formatDate(vehicle.icDate)}</td>
-            <td>${formatDate(vehicle.taxDate)}</td>
-            <td>${formatDate(vehicle.greenTaxDate)}</td>
-            <td>
-                <span class="status-badge ${status.toLowerCase()}">${status}</span>
-            </td>
-            <td class="action-buttons">
-                <button onclick="editVehicle('${vehicle.id}')" class="edit-btn">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button onclick="deleteVehicle('${vehicle.id}')" class="delete-btn">
-                    <i class="fas fa-trash"></i>
-                </button>
-                <button onclick='sendWhatsAppMessage(${safeVehicleString})'
-                        class="whatsapp-btn" title="Send WhatsApp Reminder">
-                    <i class="fab fa-whatsapp"></i>
-                </button>
-            </td>
-        `;
-        tableBody.appendChild(row);
-    });
+        // Refresh the vehicle list
+        const user = auth.currentUser;
+        if (user) {
+            fetchAndDisplayVehicles(user.uid);
+        }
+    } catch (error) {
+        console.error('Delete vehicle error:', error);
+        showToast('Error deleting vehicle', 'error');
+    }
+}
+
+function calculateStatus(vehicle) {
+    const today = new Date();
+    const warningDays = 30; // Days before expiry to show warning
+
+    // Get all applicable dates based on board type
+    let dates = [];
+    if (vehicle.boardType === 'o-board') {
+        // Own board: only check FC and Insurance
+        dates = [vehicle.fcDate, vehicle.icDate];
+    } else {
+        // Transport board: check all dates
+        dates = [
+            vehicle.permitDate,
+            vehicle.fcDate,
+            vehicle.icDate,
+            vehicle.taxDate,
+            vehicle.greenTaxDate
+        ];
+    }
+
+    // Filter out null/undefined dates
+    const validDates = dates.filter(date => date);
+    
+    // If no valid dates, consider it active
+    if (!validDates.length) return 'Active';
+
+    // Convert all dates to Date objects and find earliest expiry
+    const expiryDates = validDates.map(date => new Date(date));
+    const earliestExpiry = new Date(Math.min(...expiryDates));
+
+    // Calculate days until earliest expiry
+    const daysUntilExpiry = Math.ceil((earliestExpiry - today) / (1000 * 60 * 60 * 24));
+
+    // Determine status based on days until expiry
+    if (daysUntilExpiry < 0) {
+        return 'Expired';
+    } else if (daysUntilExpiry <= warningDays) {
+        return 'Expiring Soon';
+    } else {
+        return 'Active';
+    }
 }
