@@ -46,6 +46,20 @@
                             </select>
                         </div>
 
+                        <div class="input-group">
+                            <label for="vehicleCategory">
+                                <i class="fas fa-cube"></i>
+                                VEHICLE CATEGORY
+                            </label>
+                            <select id="vehicleCategory" required>
+                                <option value="">Select Vehicle Category</option>
+                                <option value="car">Car</option>
+                                <option value="bike">Bike</option>
+                                <option value="van-bus">Van/Bus</option>
+                                <option value="tipper-lorry">Tipper/Lorry</option>
+                            </select>
+                        </div>
+
                         <!-- Common Fields -->
                         <div class="input-group">
                             <label for="vehicleNumber">
@@ -74,7 +88,7 @@
                         <div class="input-group">
                             <label for="fcDate">
                                 <i class="fas fa-calendar"></i>
-                                FC DATE (Optional)
+                                FC DATE 
                             </label>
                             <input id="fcDate" type="date">
                         </div>
@@ -82,16 +96,16 @@
                         <div class="input-group">
                             <label for="icDate">
                                 <i class="fas fa-calendar-check"></i>
-                                IC DATE (Optional)
+                                IC DATE 
                             </label>
                             <input id="icDate" type="date">
                         </div>
 
-                        <!-- T-Board Specific Fields -->
+                        
                         <div class="input-group t-board-field">
                             <label for="permitDate">
                                 <i class="fas fa-id-card"></i>
-                                PERMIT DATE (Optional)
+                                PERMIT DATE 
                             </label>
                             <input id="permitDate" type="date">
                         </div>
@@ -99,7 +113,7 @@
                         <div class="input-group t-board-field">
                             <label for="taxDate">
                                 <i class="fas fa-file-invoice-dollar"></i>
-                                TAX DATE (Optional)
+                                TAX DATE 
                             </label>
                             <input id="taxDate" type="date">
                         </div>
@@ -107,23 +121,11 @@
                         <div class="input-group t-board-field">
                             <label for="greenTaxDate">
                                 <i class="fas fa-leaf"></i>
-                                GREEN TAX DATE (Optional)
+                                GREEN TAX DATE 
                             </label>
                             <input id="greenTaxDate" type="date">
                         </div>
 
-                        <div class="input-group">
-                            <label for="status">
-                                <i class="fas fa-info-circle"></i>
-                                STATUS
-                            </label>
-                            <select id="status" required>
-                                <option value="">Select Status</option>
-                                <option value="Active">Active</option>
-                                <option value="Expiring Soon">Expiring Soon</option>
-                                <option value="Expired">Expired</option>
-                            </select>
-                        </div>
                     </div>
 
                     <div class="form-actions">
@@ -151,7 +153,7 @@
     
     <script src="./DTEPAGE2.js"></script>
     <script>
-        // Example of how to add userId when creating a new vehicle
+  
         async function addVehicle(vehicleData) {
             try {
                 const user = auth.currentUser;
@@ -159,7 +161,7 @@
 
                 await db.collection("vehicles").add({
                     ...vehicleData,
-                    userId: user.uid,  // Add this line to store the user ID
+                    userId: user.uid,  
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
             } catch (error) {

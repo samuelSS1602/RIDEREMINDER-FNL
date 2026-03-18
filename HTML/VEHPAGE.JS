@@ -1,4 +1,3 @@
-// Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCoR3Bz7w4udNv9KQDstID8R0n0za5t9Fw",
     authDomain: "ridereminder-3a89c.firebaseapp.com",
@@ -9,7 +8,7 @@ const firebaseConfig = {
     measurementId: "G-GLRPTCH4NE"
 };
 
-// Firebase Initialization
+
 let auth, db;
 
 async function initializeFirebase() {
@@ -19,7 +18,7 @@ async function initializeFirebase() {
             auth = firebase.auth();
             db = firebase.firestore();
             
-            // Enable offline persistence with error handling
+
             await db.enablePersistence({ synchronizeTabs: true })
                 .catch(err => {
                     if (err.code === 'failed-precondition') {
@@ -115,6 +114,7 @@ function generateWhatsAppMessage(vehicle) {
     const expiringDocs = getExpiringDocuments(vehicle);
     
     const message = 
+        // Tamil message
         `அன்பார்ந்த ${vehicle.customerName},\n\n` +
         `இது உங்கள் வாகனம் ${vehicle.vehicleNumber} பற்றிய நினைவூட்டல்.\n\n` +
         `கீழ்கண்ட ஆவணங்களின் காலக்கெடு நெருங்கி வருகிறது:\n\n` +
@@ -123,7 +123,18 @@ function generateWhatsAppMessage(vehicle) {
         `நன்றி!,\n` +
         `ஸ்ரீ பாலாஜி ஓட்டுநர் பள்ளி,\n` +
         `பழனி.\n\n` +
-        `தொடர்புக்கு: 9842816621`;
+        `தொடர்புக்கு: 9842816621\n\n` +
+        `--------------------------------\n\n` +
+        // English message
+        `Dear ${vehicle.customerName},\n\n` +
+        `This is a reminder regarding your vehicle ${vehicle.vehicleNumber}.\n\n` +
+        `The following documents are approaching expiry:\n\n` +
+        `${expiringDocs}\n\n` +
+        `Please renew them at the earliest.\n\n` +
+        `Thank you!,\n` +
+        `Sri Balaji Driving School,\n` +
+        `Palani.\n\n` +
+        `Contact: 9842816621`;
 
     return encodeURIComponent(message);
 }
@@ -205,6 +216,17 @@ function getBoardType(type) {
     }
 }
 
+// Get vehicle category display name
+function getVehicleCategory(category) {
+    switch(category) {
+        case 'car': return 'Car';
+        case 'bike': return 'Bike';
+        case 'van-bus': return 'Van/Bus';
+        case 'tipper-lorry': return 'Tipper/Lorry';
+        default: return 'N/A';
+    }
+}
+
 // Update the displayVehicles function
 function displayVehicles(vehicles) {
     const tableBody = document.getElementById("table-body");
@@ -221,12 +243,12 @@ function displayVehicles(vehicles) {
         const capitalizedName = vehicle.customerName ? 
             vehicle.customerName.toUpperCase() : 'N/A';
         
-        // Create a safe version of the vehicle object with capitalized values
+        // Create a safe version of the vehicle object
         const safeVehicle = {
             customerName: capitalizedName,
             vehicleNumber: vehicle.vehicleNumber?.toUpperCase() || '',
             mobileNumber: vehicle.mobileNumber || '',
-            boardType: getBoardType(vehicle.boardType), // Using the global function
+            boardType: getBoardType(vehicle.boardType),
             permitDate: vehicle.permitDate || '',
             fcDate: vehicle.fcDate || '',
             icDate: vehicle.icDate || '',
@@ -240,6 +262,7 @@ function displayVehicles(vehicles) {
         row.innerHTML = `
             <td>${index + 1}</td>
             <td>${vehicle.vehicleNumber?.toUpperCase() || 'N/A'}</td>
+            <td>${getVehicleCategory(vehicle.vehicleCategory)}</td>
             <td>${getBoardType(vehicle.boardType)}</td>
             <td>${vehicle.mobileNumber || 'N/A'}</td>
             <td>${capitalizedName}</td>
@@ -258,13 +281,16 @@ function displayVehicles(vehicles) {
                 <button onclick="deleteVehicle('${vehicle.id}')" class="delete-btn" title="Delete">
                     <i class="fas fa-trash"></i>
                 </button>
-                ${vehicle.mobileNumber ? `
-                    <button onclick="sendWhatsAppMessage(JSON.parse(decodeURIComponent('${safeVehicleString}')))"
-                            class="whatsapp-btn" 
-                            title="Send WhatsApp Message">
-                        <i class="fab fa-whatsapp"></i>
-                    </button>
-                ` : ''}
+                <button onclick="openSMSComposer({id: '${vehicle.id}', mobileNumber: '${vehicle.mobileNumber}', customerName: '${capitalizedName}', vehicleNumber: '${vehicle.vehicleNumber?.toUpperCase() || 'N/A'}', permitDate: '${vehicle.permitDate || ''}', fcDate: '${vehicle.fcDate || ''}', icDate: '${vehicle.icDate || ''}', taxDate: '${vehicle.taxDate || ''}', greenTaxDate: '${vehicle.greenTaxDate || ''}'})" 
+                        class="sms-btn" 
+                        title="Send SMS">
+                    <i class="fas fa-sms"></i>
+                </button>
+                <button onclick="sendWhatsAppMessage(JSON.parse(decodeURIComponent('${safeVehicleString}')))"
+                        class="whatsapp-btn" 
+                        title="Send WhatsApp Message">
+                    <i class="fab fa-whatsapp"></i>
+                </button>
             </td>
         `;
         tableBody.appendChild(row);
@@ -517,4 +543,636 @@ function calculateStatus(vehicle) {
     } else {
         return 'Active';
     }
+}// Implement pagination for vehicle data
+async function fetchVehiclesWithPagination(userId, lastDoc = null, limit = 20) {
+    let query = db.collection("vehicles")
+        .where("userId", "==", userId)
+        .orderBy("vehicleNumber", "asc")
+        .limit(limit);
+    
+    if (lastDoc) {
+        query = query.startAfter(lastDoc);
+    }
+    
+    const snapshot = await query.get();
+    const vehicles = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    }));
+    
+    const lastVisible = snapshot.docs[snapshot.docs.length - 1];
+    
+    return { vehicles, lastVisible };
 }
+
+// Implement progressive loading on scroll
+let lastVisibleDoc = null;
+let isLoading = false;
+
+function setupInfiniteScroll() {
+    const tableContainer = document.querySelector('.table-wrapper');
+    tableContainer.addEventListener('scroll', () => {
+        const { scrollTop, scrollHeight, clientHeight } = tableContainer;
+        
+        if (scrollTop + clientHeight >= scrollHeight - 200 && !isLoading && lastVisibleDoc) {
+            isLoading = true;
+            
+            const loadingRow = document.createElement('tr');
+            loadingRow.id = 'loading-row';
+            loadingRow.innerHTML = '<td colspan="12" class="text-center">Loading more vehicles...</td>';
+            document.getElementById('table-body').appendChild(loadingRow);
+            
+            fetchVehiclesWithPagination(auth.currentUser.uid, lastVisibleDoc)
+                .then(({ vehicles, lastVisible }) => {
+                    document.getElementById('loading-row')?.remove();
+                    appendVehicles(vehicles);
+                    lastVisibleDoc = lastVisible;
+                    isLoading = false;
+                })
+                .catch(error => {
+                    console.error("Error loading more vehicles:", error);
+                    document.getElementById('loading-row')?.remove();
+                    isLoading = false;
+                });
+        }
+    });
+}
+
+function appendVehicles(vehicles) {
+    // Append vehicles to the existing table without replacing current content
+    const tableBody = document.getElementById("table-body");
+    const startIndex = tableBody.children.length;
+    
+    vehicles.forEach((vehicle, index) => {
+        // Use same row creation logic as in displayVehicles
+        const row = createVehicleRow(vehicle, startIndex + index);
+        tableBody.appendChild(row);
+    });
+}
+
+function createVehicleRow(vehicle, index) {
+    // Extract row creation logic from displayVehicles to make it reusable
+    const status = calculateStatus(vehicle);
+    const row = document.createElement('tr');
+    const isOwnBoard = vehicle.boardType === 'o-board';
+    
+    // Capitalize the customer name
+    const capitalizedName = vehicle.customerName ? 
+        vehicle.customerName.toUpperCase() : 'N/A';
+    
+    // Create a safe version of the vehicle object with capitalized values
+    const safeVehicle = {
+        customerName: capitalizedName,
+        vehicleNumber: vehicle.vehicleNumber?.toUpperCase() || '',
+        mobileNumber: vehicle.mobileNumber || '',
+        boardType: getBoardType(vehicle.boardType),
+        permitDate: vehicle.permitDate || '',
+        fcDate: vehicle.fcDate || '',
+        icDate: vehicle.icDate || '',
+        taxDate: vehicle.taxDate || '',
+        greenTaxDate: vehicle.greenTaxDate || ''
+    };
+
+    // Safely encode vehicle data for WhatsApp button
+    const safeVehicleString = encodeURIComponent(JSON.stringify(safeVehicle));
+    
+    row.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${vehicle.vehicleNumber?.toUpperCase() || 'N/A'}</td>
+        <td>${getBoardType(vehicle.boardType)}</td>
+        <td>${vehicle.mobileNumber || 'N/A'}</td>
+        <td>${capitalizedName}</td>
+        <td>${isOwnBoard ? '-' : formatDate(vehicle.permitDate)}</td>
+        <td>${formatDate(vehicle.fcDate) || '-'}</td>
+        <td>${formatDate(vehicle.icDate) || '-'}</td>
+        <td>${isOwnBoard ? '-' : formatDate(vehicle.taxDate)}</td>
+        <td>${isOwnBoard ? '-' : formatDate(vehicle.greenTaxDate)}</td>
+        <td>
+            <span class="status-badge ${status.toLowerCase().replace(' ', '-')}">${status}</span>
+        </td>
+        <td class="action-buttons">
+            <button onclick="editVehicle('${vehicle.id}')" class="edit-btn" title="Edit">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button onclick="deleteVehicle('${vehicle.id}')" class="delete-btn" title="Delete">
+                <i class="fas fa-trash"></i>
+            </button>
+            ${vehicle.mobileNumber ? `
+                <button onclick="sendWhatsAppMessage(JSON.parse(decodeURIComponent('${safeVehicleString}')))"
+                        class="whatsapp-btn" 
+                        title="Send WhatsApp Message">
+                    <i class="fab fa-whatsapp"></i>
+                </button>
+            ` : ''}
+        </td>
+    `;
+    
+    return row;
+}// Enhanced network status monitoring
+function setupNetworkMonitoring() {
+    const networkStatus = document.getElementById('networkStatus');
+    const lastSync = document.getElementById('lastSync');
+    
+    if (!networkStatus || !lastSync) return;
+    
+    // Initial status
+    updateNetworkStatus();
+    
+    // Listen for online/offline events
+    window.addEventListener('online', () => {
+        updateNetworkStatus();
+        syncDataWithServer();
+    });
+    
+    window.addEventListener('offline', updateNetworkStatus);
+    
+    function updateNetworkStatus() {
+        const isOnline = navigator.onLine;
+        
+        networkStatus.innerHTML = isOnline 
+            ? '<span class="online-status"><i class="fas fa-wifi"></i> Online</span>' 
+            : '<span class="offline-status"><i class="fas fa-exclamation-triangle"></i> Offline - Changes will sync when you reconnect</span>';
+        
+        networkStatus.className = isOnline ? 'status-online' : 'status-offline';
+    }
+    
+    function syncDataWithServer() {
+        // Attempt to sync any pending changes when back online
+        lastSync.textContent = `Last synced: ${new Date().toLocaleTimeString()}`;
+        
+        // Refresh data
+        const user = auth.currentUser;
+        if (user) {
+            fetchAndDisplayVehicles(user.uid);
+        }
+    }
+}
+
+// Add queue for operations while offline
+const offlineQueue = [];
+
+async function performAction(actionType, data) {
+    try {
+        if (!navigator.onLine) {
+            // Queue the action for later
+            offlineQueue.push({ actionType, data, timestamp: Date.now() });
+            localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
+            showToast('Action queued for when you\'re back online', 'info');
+            return;
+        }
+        
+        // Perform the action immediately if online
+        switch (actionType) {
+            case 'add':
+                await db.collection('vehicles').add(data);
+                break;
+            case 'update':
+                await db.collection('vehicles').doc(data.id).update(data);
+                break;
+            case 'delete':
+                await db.collection('vehicles').doc(data).delete();
+                break;
+            default:
+                throw new Error('Unknown action type');
+        }
+        
+        // Refresh data after successful action
+        const user = auth.currentUser;
+        if (user) {
+            fetchAndDisplayVehicles(user.uid);
+        }
+        
+    } catch (error) {
+        console.error(`Error performing ${actionType} action:`, error);
+        showToast(`Error: ${error.message}`, 'error');
+    }
+}
+
+// Process the offline queue when back online
+function processOfflineQueue() {
+    if (!navigator.onLine) return;
+    
+    const queuedActions = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+    
+    if (queuedActions.length > 0) {
+        showToast(`Processing ${queuedActions.length} queued actions...`, 'info');
+        
+        // Create a copy of the queue and clear storage
+        const actionsToProcess = [...queuedActions];
+        localStorage.removeItem('offlineQueue');
+        offlineQueue.length = 0;
+        
+        // Process each action
+        actionsToProcess.forEach(async ({ actionType, data }) => {
+            try {
+                await performAction(actionType, data);
+            } catch (error) {
+                console.error(`Failed to process queued ${actionType}:`, error);
+            }
+        });
+        
+        showToast('Queued actions processed successfully', 'success');
+    }
+}
+
+// Initialize offline support
+document.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('online', processOfflineQueue);
+    
+    // Check for queued actions on page load
+    if (navigator.onLine) {
+        processOfflineQueue();
+    }
+});// Implement dark mode toggle
+function setupDarkModeToggle() {
+    // Add dark mode toggle to sidebar
+    const sidebarNav = document.querySelector('.sidebar-nav');
+    if (!sidebarNav) return;
+    
+    const darkModeToggle = document.createElement('a');
+    darkModeToggle.href = "#";
+    darkModeToggle.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
+    darkModeToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.body.classList.toggle('dark-mode');
+        
+        // Save preference
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        localStorage.setItem('darkMode', isDarkMode);
+        
+        // Update icon
+        darkModeToggle.innerHTML = isDarkMode 
+            ? '<i class="fas fa-sun"></i> Light Mode'
+            : '<i class="fas fa-moon"></i> Dark Mode';
+    });
+    
+    // Add to sidebar after other items
+    sidebarNav.appendChild(darkModeToggle);
+    
+    // Load saved preference
+    if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+        darkModeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+    }
+}
+
+// Improve date handling with better validation
+function validateAndFormatDate(dateInput, fieldName) {
+    if (!dateInput) return null;
+    
+    try {
+        // Attempt to create a valid date object
+        const date = new Date(dateInput);
+        
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+            throw new Error(`Invalid date format for ${fieldName}`);
+        }
+        
+        // Format date consistently as ISO string to prevent timezone issues
+        return date.toISOString().split('T')[0];
+    } catch (error) {
+        console.error(`Date validation error:`, error);
+        showToast(`Invalid date: ${error.message}`, 'error');
+        return null;
+    }
+}
+
+// Add keyboard navigation for table
+function setupTableKeyboardNavigation() {
+    const table = document.querySelector('.vehicle-table');
+    if (!table) return;
+    
+    // Make table rows focusable
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        row.setAttribute('tabindex', '0');
+        
+        // Handle keyboard events
+        row.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                // Open edit dialog on Enter or Space
+                const editBtn = row.querySelector('.edit-btn');
+                if (editBtn) {
+                    e.preventDefault();
+                    editBtn.click();
+                }
+            } else if (e.key === 'Delete') {
+                // Delete on Delete key
+                const deleteBtn = row.querySelector('.delete-btn');
+                if (deleteBtn) {
+                    e.preventDefault();
+                    deleteBtn.click();
+                }
+            } else if (e.key === 'ArrowDown') {
+                // Navigate to next row
+                e.preventDefault();
+                const nextRow = row.nextElementSibling;
+                if (nextRow) nextRow.focus();
+            } else if (e.key === 'ArrowUp') {
+                // Navigate to previous row
+                e.preventDefault();
+                const prevRow = row.previousElementSibling;
+                if (prevRow) prevRow.focus();
+            }
+        });
+    });
+}
+
+// Add print functionality
+function setupPrintButton() {
+    const tableActions = document.querySelector('.table-actions');
+    if (!tableActions) return;
+    
+    const printButton = document.createElement('button');
+    printButton.className = 'print-btn';
+    printButton.title = 'Print Records';
+    printButton.innerHTML = '<i class="fas fa-print"></i>';
+    printButton.addEventListener('click', printVehicleRecords);
+    
+    tableActions.appendChild(printButton);
+}
+
+function printVehicleRecords() {
+    // Create a printable version
+    const printContent = document.createElement('div');
+    const table = document.querySelector('.vehicle-table').cloneNode(true);
+    
+    // Remove action buttons for printing
+    const actionCells = table.querySelectorAll('th:last-child, td:last-child');
+    actionCells.forEach(cell => cell.remove());
+    
+    printContent.innerHTML = `
+        <h1>Vehicle Records</h1>
+        <p>Generated: ${new Date().toLocaleString()}</p>
+    `;
+    printContent.appendChild(table);
+    
+    // Create print window
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Vehicle Records</title>
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    table { width: 100%; border-collapse: collapse; }
+                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    th { background-color: #f2f2f2; }
+                    .status-badge {
+                        padding: 4px 8px;
+                        border-radius: 4px;
+                        font-size: 0.875rem;
+                    }
+                    .active { background-color: #10b981; color: white; }
+                    .expiring-soon { background-color: #f59e0b; color: white; }
+                    .expired { background-color: #ef4444; color: white; }
+                    @media print {
+                        h1 { text-align: center; }
+                        p { text-align: right; }
+                    }
+                </style>
+            </head>
+            <body>
+                ${printContent.outerHTML}
+                <script>
+                    setTimeout(() => { window.print(); window.close(); }, 500);
+                </script>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+}// Enhanced Notification System
+function setupNotificationSystem() {
+    // Add notification center UI
+    const notificationBell = document.querySelector('.notification-bell');
+    if (!notificationBell) return;
+    
+    notificationBell.innerHTML = `
+        <i class="fas fa-bell"></i>
+        <span class="notification-badge" id="expiringCount">0</span>
+    `;
+    
+    // Create notification panel
+    const notificationPanel = document.createElement('div');
+    notificationPanel.className = 'notification-panel';
+    notificationPanel.innerHTML = `
+        <div class="notification-header">
+            <h3>Notifications</h3>
+            <button id="mark-all-read" class="text-link">Mark all as read</button>
+        </div>
+        <div class="notification-list" id="notification-list">
+            <div class="empty-notifications">No new notifications</div>
+        </div>
+    `;
+    
+    // Add to DOM
+    notificationBell.appendChild(notificationPanel);
+    
+    // Toggle notification panel
+    notificationBell.addEventListener('click', (e) => {
+        if (e.target.closest('#mark-all-read')) {
+            // Handle mark all read
+            markAllNotificationsAsRead();
+            return;
+        }
+        
+        notificationPanel.classList.toggle('show');
+    });
+    
+    // Close panel when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.notification-bell') && notificationPanel.classList.contains('show')) {
+            notificationPanel.classList.remove('show');
+        }
+    });
+}
+
+// Check for upcoming expirations
+function checkForExpirations() {
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    // Get all vehicles
+    db.collection("vehicles")
+        .where("userId", "==", user.uid)
+        .get()
+        .then(snapshot => {
+            const vehicles = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            
+            // Get notifiable expirations (7, 15, 30 days)
+            const notifications = [];
+            const today = new Date();
+            
+            vehicles.forEach(vehicle => {
+                // Check each date field
+                const dateFields = [
+                    { name: 'Permit', date: vehicle.permitDate, applicable: vehicle.boardType !== 'o-board' },
+                    { name: 'FC', date: vehicle.fcDate, applicable: true },
+                    { name: 'Insurance', date: vehicle.icDate, applicable: true },
+                    { name: 'Tax', date: vehicle.taxDate, applicable: vehicle.boardType !== 'o-board' },
+                    { name: 'Green Tax', date: vehicle.greenTaxDate, applicable: vehicle.boardType !== 'o-board' }
+                ];
+                
+                dateFields.forEach(field => {
+                    if (!field.applicable || !field.date) return;
+                    
+                    const expiryDate = new Date(field.date);
+                    const daysUntil = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+                    
+                    // Check for specific thresholds
+                    if ([7, 15, 30].includes(daysUntil)) {
+                        notifications.push({
+                            vehicleId: vehicle.id,
+                            vehicleNumber: vehicle.vehicleNumber,
+                            customerName: vehicle.customerName,
+                            documentType: field.name,
+                            expiryDate: field.date,
+                            daysUntil,
+                            timestamp: new Date().toISOString(),
+                            read: false
+                        });
+                    }
+                });
+            });
+            
+            // Store notifications
+            if (notifications.length > 0) {
+                storeNotifications(notifications);
+                displayNotifications();
+            }
+        })
+        .catch(error => {
+            console.error("Error checking expirations:", error);
+        });
+}
+
+// Store notifications
+function storeNotifications(newNotifications) {
+    // Get existing notifications
+    const existingNotifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+    
+    // Add new notifications (avoiding duplicates)
+    const combined = [...existingNotifications];
+    
+    newNotifications.forEach(notification => {
+        // Check if this notification already exists
+        const exists = existingNotifications.some(n => 
+            n.vehicleId === notification.vehicleId && 
+            n.documentType === notification.documentType && 
+            n.daysUntil === notification.daysUntil
+        );
+        
+        if (!exists) {
+            combined.push(notification);
+        }
+    });
+    
+    // Sort by date (newest first)
+    combined.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    // Store back in localStorage
+    localStorage.setItem('notifications', JSON.stringify(combined));
+    
+    // Update badge count
+    updateNotificationBadge();
+}
+
+// Display notifications in the panel
+function displayNotifications() {
+    const notificationList = document.getElementById('notification-list');
+    if (!notificationList) return;
+    
+    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+    
+    if (notifications.length === 0) {
+        notificationList.innerHTML = '<div class="empty-notifications">No notifications</div>';
+        return;
+    }
+    
+    // Display notifications
+    notificationList.innerHTML = notifications.map(notification => `
+        <div class="notification-item ${notification.read ? 'read' : 'unread'}" data-id="${notification.timestamp}">
+            <div class="notification-icon ${notification.daysUntil <= 7 ? 'urgent' : ''}">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="notification-content">
+                <div class="notification-title">
+                    ${notification.documentType} expiring in ${notification.daysUntil} days
+                </div>
+                <div class="notification-details">
+                    Vehicle: ${notification.vehicleNumber} (${notification.customerName})
+                </div>
+                <div class="notification-time">
+                    ${formatRelativeTime(notification.timestamp)}
+                </div>
+            </div>
+            <button class="notification-action" onclick="markNotificationAsRead('${notification.timestamp}')">
+                <i class="fas fa-check"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+// Mark notification as read
+function markNotificationAsRead(timestamp) {
+    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+    
+    const updated = notifications.map(notification => {
+        if (notification.timestamp === timestamp) {
+            return { ...notification, read: true };
+        }
+        return notification;
+    });
+    
+    localStorage.setItem('notifications', JSON.stringify(updated));
+    displayNotifications();
+    updateNotificationBadge();
+}
+
+// Mark all notifications as read
+function markAllNotificationsAsRead() {
+    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+    
+    const updated = notifications.map(notification => ({ ...notification, read: true }));
+    
+    localStorage.setItem('notifications', JSON.stringify(updated));
+    displayNotifications();
+    updateNotificationBadge();
+}
+
+// Update notification badge count
+function updateNotificationBadge() {
+    const badge = document.getElementById('expiringCount');
+    if (!badge) return;
+    
+    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+    const unreadCount = notifications.filter(n => !n.read).length;
+    
+    badge.textContent = unreadCount;
+    badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+}
+
+// Format timestamp as relative time
+function formatRelativeTime(timestamp) {
+    const now = new Date();
+    const date = new Date(timestamp);
+    const diffMs = now - date;
+    
+    // Convert to seconds
+    const diffSec = Math.floor(diffMs / 1000);
+    
+    if (diffSec < 60) return 'Just now';
+    if (diffSec < 3600) return `${Math.floor(diffSec / 60)} minutes ago`;
+    if (diffSec < 86400) return `${Math.floor(diffSec / 3600)} hours ago`;
+    if (diffSec < 604800) return `${Math.floor(diffSec / 86400)} days ago`;
+    
+    // Return formatted date for older notifications
+    return date.toLocaleDateString();
+}
+
+// Check for expirations periodically
+setInterval(checkForExpirations, 3600000); // Check hourly

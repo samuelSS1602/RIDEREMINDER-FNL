@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vehicle Management Dashboard</title>
     <link rel="stylesheet" href="./VEHPAGE.css">
+    <link rel="stylesheet" href="./smsStyles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-functions.js"></script>
 </head>
 <body>
     <div class="dashboard">
@@ -56,112 +58,115 @@
                 </div>
             </header>
 
-            <div id="networkStatus" class="text-sm p-2"></div>
+            <div class="content-wrapper">
+                <div id="networkStatus" class="text-sm p-2"></div>
 
-            <div class="network-status">
-                <div id="networkStatus"></div>
-                <div id="lastSync"></div>
-            </div>
+                <div class="network-status">
+                    <div id="networkStatus"></div>
+                    <div id="lastSync"></div>
+                </div>
 
-            <div class="dashboard-stats">
-                <div class="stat-card total">
-                    <div class="stat-icon">
-                        <i class="fas fa-car"></i>
+                <div class="dashboard-stats">
+                    <div class="stat-card total">
+                        <div class="stat-icon">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Total Vehicles</h3>
+                            <div class="value" id="totalVehicles">0</div>
+                            <div class="trend">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>+3.2% this month</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="stat-details">
-                        <h3>Total Vehicles</h3>
-                        <div class="value" id="totalVehicles">0</div>
-                        <div class="trend">
-                            <i class="fas fa-arrow-up"></i>
-                            <span>+3.2% this month</span>
+                    <div class="stat-card active">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Active Vehicles</h3>
+                            <div class="value" id="activeVehicles">0</div>
+                            <div class="trend">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>+2.4% this month</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card expiring">
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Expiring Soon</h3>
+                            <div class="value" id="expiringSoon">0</div>
+                            <div class="trend warning">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>+5.1% this month</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card expired">
+                        <div class="stat-icon">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>Expired</h3>
+                            <div class="value" id="expired">0</div>
+                            <div class="trend danger">
+                                <i class="fas fa-arrow-down"></i>
+                                <span>-1.8% this month</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="stat-card active">
-                    <div class="stat-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="stat-details">
-                        <h3>Active Vehicles</h3>
-                        <div class="value" id="activeVehicles">0</div>
-                        <div class="trend">
-                            <i class="fas fa-arrow-up"></i>
-                            <span>+2.4% this month</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="stat-card expiring">
-                    <div class="stat-icon">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="stat-details">
-                        <h3>Expiring Soon</h3>
-                        <div class="value" id="expiringSoon">0</div>
-                        <div class="trend warning">
-                            <i class="fas fa-arrow-up"></i>
-                            <span>+5.1% this month</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="stat-card expired">
-                    <div class="stat-icon">
-                        <i class="fas fa-times-circle"></i>
-                    </div>
-                    <div class="stat-details">
-                        <h3>Expired</h3>
-                        <div class="value" id="expired">0</div>
-                        <div class="trend danger">
-                            <i class="fas fa-arrow-down"></i>
-                            <span>-1.8% this month</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="table-container">
-                <div class="table-header">
-                    <div class="table-title">
-                        <h2>Vehicle Records</h2>
-                        <span class="record-count" id="recordCount">0 records</span>
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="table-title">
+                            <h2>Vehicle Records</h2>
+                            <span class="record-count" id="recordCount">0 records</span>
+                        </div>
+                        <div class="table-actions">
+                            <select id="statusFilter" onchange="filterByStatus()" class="status-select">
+                                <option value="all">All Status</option>
+                                <option value="Active">Active</option>
+                                <option value="Expiring Soon">Expiring Soon</option>
+                                <option value="Expired">Expired</option>
+                            </select>
+                            <select id="boardTypeFilter" class="status-select">
+                                <option value="all">All Board Types</option>
+                            </select>
+                            <button onclick="refreshTable()" class="refresh-btn">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="table-actions">
-                        <select id="statusFilter" onchange="filterByStatus()" class="status-select">
-                            <option value="all">All Status</option>
-                            <option value="Active">Active</option>
-                            <option value="Expiring Soon">Expiring Soon</option>
-                            <option value="Expired">Expired</option>
-                        </select>
-                        <select id="boardTypeFilter" class="status-select">
-                            <option value="all">All Board Types</option>
-                        </select>
-                        <button onclick="refreshTable()" class="refresh-btn">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
+                    
+                    <div class="table-wrapper">
+                        <table class="vehicle-table">
+                            <thead>
+                                <tr>
+                                    <th>S.NO</th>
+                                    <th>VEHICLE NUMBER</th>
+                                    <th>CATEGORY</th>
+                                    <th>BOARD TYPE</th>
+                                    <th>MOBILE NUMBER</th>
+                                    <th>CUSTOMER NAME</th>
+                                    <th>PERMIT DATE</th>
+                                    <th>FC DATE</th>
+                                    <th>IC DATE</th>
+                                    <th>TAX DATE</th>
+                                    <th>GREEN TAX DATE</th>
+                                    <th>STATUS</th>
+                                    <th>ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body">
+                              
+                            </tbody>
+                        </table>
                     </div>
-                </div>
-                
-                <div class="table-wrapper">
-                    <table class="vehicle-table">
-                        <thead>
-                            <tr>
-                                <th>S.NO</th>
-                                <th>VEHICLE NUMBER</th>
-                                <th>BOARD TYPE</th>
-                                <th>MOBILE NUMBER</th>
-                                <th>CUSTOMER NAME</th>
-                                <th>PERMIT DATE</th>
-                                <th>FC DATE</th>
-                                <th>IC DATE</th>
-                                <th>TAX DATE</th>
-                                <th>GREEN TAX DATE</th>
-                                <th>STATUS</th>
-                                <th>ACTIONS</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-body">
-                            <!-- Table content will be dynamically populated -->
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </main>
@@ -169,5 +174,6 @@
 
 
     <script src="./VEHPAGE.JS"></script>
+    <script src="./smsIntegration.js"></script>
 </body>
 </html>

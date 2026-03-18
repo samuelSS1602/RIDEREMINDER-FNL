@@ -62,10 +62,12 @@ function setLoading(isLoading) {
         submitBtn.disabled = true;
         btnText.style.opacity = '0';
         spinner.style.display = 'block';
+        submitBtn.style.cursor = 'wait';
     } else {
         submitBtn.disabled = false;
         btnText.style.opacity = '1';
         spinner.style.display = 'none';
+        submitBtn.style.cursor = 'pointer';
     }
 }
 
@@ -148,8 +150,7 @@ bookForm.addEventListener('submit', async (e) => {
 
 // Add this helper function for error handling
 function handleLoginError(error) {
-    let errorMessage = 'An error occurred during login';
-    
+    let errorMessage = 'An error occurred during login';    
     switch (error.code) {
         case 'auth/user-not-found':
             errorMessage = 'No account found with this email';
